@@ -1,5 +1,5 @@
 # SkipGuide
-Info TBA
+Info and Doc TBA
 
 ## Installation
 `pip install cyvcf2 cython`
