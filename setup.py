@@ -25,7 +25,7 @@ setuptools.setup(
     python_requires=">=3.7",
     install_requires=[
         "numpy",
-        "mmsplice==2.0.0",
+        "mmsplice==1.0.2",
         "scikit-learn==0.18.1,==0.20.0"
     ]
 )
