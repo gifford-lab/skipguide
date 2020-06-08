@@ -1,5 +1,5 @@
 import setuptools
-import skipguide
+# import skipguide
 
 
 with open("README.md", "r") as fh:
@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="skipguide",
-    version=skipguide.__version__,
+    version="0.0.1",
     author="Wilson Louie",
     author_email="wilsonlouie1@gmail.com",
     description="Exon Skipping Prediction from CRISPR gRNA",
@@ -19,13 +19,10 @@ setuptools.setup(
     classifiers=[
         "Intended Audience :: Science/Research",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.7"
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7'
     ],
     # license='MIT',
-    python_requires=">=3.7",
-    install_requires=[
-        "numpy",
-        "mmsplice==1.0.2",
-        "scikit-learn==0.18.1,==0.20.0"
-    ]
+    python_requires=">=3.5,<=3.7"
 )
