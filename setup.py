@@ -49,6 +49,7 @@ setuptools.setup(
     ],
     # license='MIT',
     python_requires=">=3.5",
+    include_package_data=True,
     install_requires=[
         'cyvcf2',
         'mmsplice==1.0.3',

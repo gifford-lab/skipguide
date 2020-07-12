@@ -1,0 +1,3 @@
+include skipguide/models/inDelphi/model-sklearn-0.18.1/*.pkl
+include skipguide/models/inDelphi/model-sklearn-0.20.0/*.pkl
+include skipguide/models/wMMSplice/*.p
