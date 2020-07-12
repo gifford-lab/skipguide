@@ -7,7 +7,7 @@ import numpy as np
 # sys.path.append(os.path.join(os.path.dirname(__file__), 'models/inDelphi/inDelphi-model/'))
 # from skipguide.models.inDelphi.inDelphiModel import inDelphi
 import importlib
-inDelphi = importlib.import_module(".models.inDelphi.inDelphi-model.inDelphi", package='skipguide')
+inDelphi = importlib.import_module(".models.inDelphi.inDelphi", package='skipguide')
 
 from mmsplice.vcf_dataloader import SplicingVCFDataloader
 from mmsplice import MMSplice, predict_all_table, predict_save
