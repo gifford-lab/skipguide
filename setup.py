@@ -1,5 +1,29 @@
 import setuptools
-# import skipguide
+import codecs
+import os.path
+
+
+# Suggestion #1 from
+# https://packaging.python.org/guides/single-sourcing-package-version/
+# for handling versioning
+def read(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with codecs.open(os.path.join(here, rel_path), 'r') as fp:
+        return fp.read()
+
+
+def get_version(rel_path):
+    for line in read(rel_path).splitlines():
+        if line.startswith('__version__'):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    else:
+        raise RuntimeError("Unable to find version string.")
+
+
+DISTNAME = 'skipguide'
+VERSION = get_version(DISTNAME + '/__init__.py')
+DESCRIPTION = 'Prediction of CRISPR-Cas9 mediated Exon Skipping'
 
 
 with open("README.md", "r") as fh:
@@ -7,11 +31,11 @@ with open("README.md", "r") as fh:
 
 
 setuptools.setup(
-    name="skipguide",
-    version="0.0.1",
+    name=DISTNAME,
+    version=VERSION,
     author="Wilson Louie",
     author_email="wilsonlouie1@gmail.com",
-    description="Exon Skipping Prediction from CRISPR gRNA",
+    description=DESCRIPTION,
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/gifford-lab/skipguide",
@@ -24,5 +48,10 @@ setuptools.setup(
         'Programming Language :: Python :: 3.7'
     ],
     # license='MIT',
-    python_requires=">=3.5,<=3.7"
+    python_requires=">=3.5",
+    install_requires=[
+        'cyvcf2',
+        'mmsplice==1.0.3',
+        'scikit-learn==0.20.0'
+    ]
 )
