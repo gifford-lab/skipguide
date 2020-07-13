@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore")
+
 from mmsplice import MMSplice, predict_all_table
 from mmsplice.vcf_dataloader import SplicingVCFDataloader
 import os
