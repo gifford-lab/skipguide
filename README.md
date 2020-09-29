@@ -3,12 +3,14 @@ Prediction of CRISPR-Cas9 mediated Exon Skipping
 
 Paper: TBA
 
-## Installation
+## Installation (Python Package)
 `pip install cython`
 
 `pip install git+https://github.com/gifford-lab/skipguide.git`
 
 ## Example Usage
+Please refer to [`skipguide/skipguide.py`](skipguide/skipguide.py) for documentation.
+
 ```
 from skipguide import SkipGuide
 
