@@ -11,7 +11,7 @@ Paper: TBA
 ## Example Usage
 Please refer to [`skipguide/skipguide.py`](skipguide/skipguide.py) for documentation.
 
-```
+```python
 from skipguide import SkipGuide
 
 sg = SkipGuide()
