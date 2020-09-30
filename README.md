@@ -28,5 +28,7 @@ splice_acceptor_site = len(intron)
 cutsite = len(intron)
 gRNA_orientation = '-'
 
+# The predicted percent spliced in of the exon, which measures the fraction of transcripts containing the exon.
+# One minus this value gives the predicted exon skipping frequency.
 PSI = skipguide.predict(seq, cutsite, splice_acceptor_site, gRNA_orientation)
 ```
