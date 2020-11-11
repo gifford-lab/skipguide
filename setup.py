@@ -51,6 +51,8 @@ setuptools.setup(
     python_requires=">=3.5",
     include_package_data=True,
     install_requires=[
+        'tensorflow<=1.13.1',
+        'keras>=2.0.4,<=2.2.4',
         'spliceai',
         'cyvcf2',
         'mmsplice==1.0.3',
