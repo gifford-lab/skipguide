@@ -1,8 +1,15 @@
 import warnings
-warnings.filterwarnings("ignore")
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=UserWarning)
 
 from mmsplice import MMSplice, predict_all_table
 from mmsplice.vcf_dataloader import SplicingVCFDataloader
+
+from keras.models import load_model
+from pkg_resources import resource_filename
+from spliceai.utils import one_hot_encode
+
 import os
 import sys
 import tempfile
@@ -40,25 +47,33 @@ class SkipGuide():
     TBA
     """
 
-    def __init__(self, cell_type='mESC'):
+    def __init__(self, cell_type='mESC', verbose=1):
         """
         Parameters
         ----------
         cell_type : {'mESC', 'U2OS', 'HEK293', 'HCT116', 'K562'}, default='mESC'
-            The cell type. Although inDelphi accepts many cell types, the wMMSplice component
+            The cell type. Although inDelphi accepts many cell types, the MetaSplice component
             of SkipGuide is tuned and evaluated on mESC cells, so predictions on other cell 
             types may not be reliable.
+        verbose : int
+            The verbosity. 0 = silent, 1 = progress print out.
         """
+        self.verbose = verbose
 
+        # Initialize inDelphi
         self._reset_inDelphi()
         inDelphi.init_model(celltype=cell_type)
         self._inDelphi_input_length = 140
         self._inDelphi_cutsite = int(self._inDelphi_input_length / 2)
 
-        wMMSplice_model_path = os.path.join(os.path.dirname(
-            __file__), 'models/wMMSplice/wMMSplice_model.p')
-        with open(wMMSplice_model_path, 'rb') as handle:
-            self._wMMSplice = pickle.load(handle)
+        if self.verbose:
+            print("Initializing MetaSplice...")
+
+        # Initialize MetaSplice
+        MetaSplice_model_path = os.path.join(os.path.dirname(
+            __file__), 'models/MetaSplice/MetaSplice_model.p')
+        with open(MetaSplice_model_path, 'rb') as handle:
+            self._MetaSplice = pickle.load(handle)
 
     def predict(self, seq, cutsite, splice_acceptor_site, gRNA_orientation='+'):
         """Predicts the percent spliced in of the exon.
@@ -92,7 +107,7 @@ class SkipGuide():
 
         seq = seq.upper()
 
-        # inDelphi predict (P(p_i), for product p_i)
+        # ========== inDelphi predict (P(p_i), for product p_i) ==========
         inDelphi_offset = cutsite - self._inDelphi_cutsite
         inDelphi_cutsite = self._inDelphi_cutsite
         inDelphi_seq = seq[inDelphi_offset:(
@@ -105,14 +120,17 @@ class SkipGuide():
         pred_df, stats = inDelphi.predict(inDelphi_seq, inDelphi_cutsite)
         pred_df = inDelphi.add_mhless_genotypes(pred_df, stats)
 
-        # wMMSplice predict (P(R|p_i), R = exon retention)
+        # ========== MetaSplice predict (P(R|p_i), R = exon retention) ==========
+        # MMSplice Intron, Acceptor, Exon scores
+        if self.verbose:
+            print("MMSplice Scoring...")
         fasta = tempfile.NamedTemporaryFile(mode='w')
         gtf = tempfile.NamedTemporaryFile(mode='w')
         vcf = tempfile.NamedTemporaryFile(mode='w')
 
         self._write_fasta(fasta, seq)
         self._write_gtf(gtf, seq, splice_acceptor_site)
-        inDelphi_freqs = self._write_vcf(
+        inDelphi_freqs, inDelphi_genotypes = self._write_vcf(
             vcf, seq, gRNA_orientation, inDelphi_offset, inDelphi_seq, inDelphi_cutsite, pred_df)
 
         dl = SplicingVCFDataloader(gtf.name, fasta.name, vcf.name)
@@ -124,18 +142,44 @@ class SkipGuide():
         gtf.close()
         vcf.close()
 
-        scores = []
+        MMSplice_scores = []
         for _, row in predictions.iterrows():
-            scores.append(row[[
+            MMSplice_scores.append(row[[
                 'alt_acceptorIntron',
                 'alt_acceptor',
                 'alt_exon'
             ]].values)
-        X = np.array(scores)
-        y_preds = self._expit(self._wMMSplice.predict(X))
 
-        # SkipGuide final weighted average (sum(P(p_i)P(R|p_i) over all i) = P(R))
+        # SpliceAI predictions
+        # MMSplice's keras model loading does not play well with SpliceAI. Need to reload SpliceAI
+        # every predict call...
+        # TODO: introduce a predict method that takes in multiple sequences, and have SpliceAI and MMSplice
+        # process them in batches and recombine afterwards to speed this up.
+        if self.verbose:
+            print("SpliceAI Scoring...")
+        self._load_spliceai()
+        context = 10000
+        max_seq_len = context + len(seq) + 1
+        x = np.zeros((len(inDelphi_genotypes), max_seq_len, 4))
+        for i, repair_genotype in enumerate(inDelphi_genotypes):
+            input_sequence = 'N'*(context // 2) + repair_genotype
+            input_sequence += 'N'*(max_seq_len - len(input_sequence))
+            x[i, :, :] = one_hot_encode(input_sequence)[None, :]
+        splice_ai_preds = np.mean([self._SpliceAI_models[m].predict(x, verbose=self.verbose) for m in range(5)], axis=0)
+        SpliceAI_logit_scores = self._logit(np.max(splice_ai_preds[:, :, 1], axis=1).reshape(-1, 1))
+        
+        # MetaSplice combines MMSplice and SpliceAI scores into a single P(R|p_i) prediction
+        if self.verbose:
+            print("MetaSplice Predicting...")
+        X = np.hstack((np.array(MMSplice_scores), SpliceAI_logit_scores))
+        y_preds = self._expit(self._MetaSplice.predict(X))
+
+        # SkipGuide final weighted average (sum(P(p_i)P(R|p_i) over all i) = P(R) = PSI)
         return np.average(y_preds, weights=inDelphi_freqs)
+
+    def _load_spliceai(self):
+        paths = ('models/spliceai{}.h5'.format(x) for x in range(1, 6))
+        self._SpliceAI_models = [load_model(resource_filename('spliceai', x)) for x in paths]
 
     def _reset_inDelphi(self):
         inDelphi.init_flag = False
@@ -153,6 +197,10 @@ class SkipGuide():
 
     def _expit(self, x):
         return 1. / (1. + np.exp(-np.array(x)))
+
+    def _logit(self, x):
+        x = np.clip(x, 0.00001, 0.99999)
+        return np.log(x) - np.log(1 - x)
 
     def _write_fasta(self, f, seq):
         f.write('>0\n')
@@ -183,6 +231,7 @@ class SkipGuide():
 
     def _write_vcf(self, f, seq, g_orientation, inDelphi_offset, inDelphi_seq, inDelphi_cutsite, inDelphi_preds):
         inDelphi_freqs = []
+        inDelphi_genotypes = []
 
         f.write('##fileformat=VCFv4.0\n')
         f.write('##contig=<ID=0,length={0}>\n'.format(len(seq)))
@@ -206,6 +255,9 @@ class SkipGuide():
             f.write('\t'.join([
                 '0', str(pos), '.', ref, alt, '.', '.', '.', '\n'
             ]))
+
+            genotype = seq[0:pos] + inserted_base + seq[0:pos]
+            inDelphi_genotypes.append(genotype)
 
         # Deletions
         deletion_pred_df = inDelphi_preds.loc[inDelphi_preds['Category'] == 'del']
@@ -231,6 +283,9 @@ class SkipGuide():
                 '0', str(pos), '.', ref, alt, '.', '.', '.', '\n'
             ]))
 
+            genotype = seq[0:pos] + seq[(pos + deletion_size):]
+            inDelphi_genotypes.append(genotype)
+
         f.seek(0)
 
-        return inDelphi_freqs
+        return inDelphi_freqs, inDelphi_genotypes

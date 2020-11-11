@@ -47,10 +47,11 @@ setuptools.setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7'
     ],
-    # license='MIT',
+    license='MIT',
     python_requires=">=3.5",
     include_package_data=True,
     install_requires=[
+        'spliceai',
         'cyvcf2',
         'mmsplice==1.0.3',
         'scikit-learn==0.20.0'
