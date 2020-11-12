@@ -52,6 +52,7 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         'cyvcf2',
+        'pyranges<=0.0.67',
         'mmsplice==1.0.3',
         'spliceai',
         'scikit-learn==0.20.0'
