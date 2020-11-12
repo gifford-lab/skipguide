@@ -40,7 +40,7 @@ class SkipGuide():
     >>> gRNA_orientation = '-'
     >>> PSI = sg.predict(seq, cutsite, splice_acceptor_site, gRNA_orientation)  # predicted percent spliced in of the exon, i.e. fraction of transcripts containing the exon
     >>> PSI
-    0.14703340862632835
+    0.12883051446158653
 
     References
     -------
