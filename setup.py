@@ -2,7 +2,6 @@ import setuptools
 import codecs
 import os.path
 
-
 # Suggestion #1 from
 # https://packaging.python.org/guides/single-sourcing-package-version/
 # for handling versioning
@@ -10,7 +9,6 @@ def read(rel_path):
     here = os.path.abspath(os.path.dirname(__file__))
     with codecs.open(os.path.join(here, rel_path), 'r') as fp:
         return fp.read()
-
 
 def get_version(rel_path):
     for line in read(rel_path).splitlines():
@@ -20,15 +18,12 @@ def get_version(rel_path):
     else:
         raise RuntimeError("Unable to find version string.")
 
-
 DISTNAME = 'skipguide'
 VERSION = get_version(DISTNAME + '/__init__.py')
 DESCRIPTION = 'Prediction of CRISPR-Cas9 mediated Exon Skipping'
 
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
-
 
 setuptools.setup(
     name=DISTNAME,
@@ -54,7 +49,6 @@ setuptools.setup(
         'cyvcf2',
         'pyranges<=0.0.67',
         'mmsplice==1.0.3',
-        'spliceai',
-        'scikit-learn==0.20.0'
+        'spliceai'
     ]
 )

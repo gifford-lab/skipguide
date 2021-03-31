@@ -1,7 +1,7 @@
 # SkipGuide
 Prediction of CRISPR-Cas9 mediated Exon Skipping
 
-Paper: TBA
+Paper: [Machine learning based CRISPR gRNA design for therapeutic exon skipping](https://doi.org/10.1371/journal.pcbi.1008605)
 
 ## Installation (Python Package)
 ```shell
@@ -10,6 +10,11 @@ pip install cython
 
 ```shell
 pip install git+https://github.com/gifford-lab/skipguide.git
+```
+
+inDelphi requires version scikit-learn version 0.20.0. Although the MMSplice package requires scikit-learn version 0.19.2, it'll still work with version 0.20.0. Make sure version 0.20.0 is installed:
+```shell
+pip install scikit-learn==0.20.0 --no-deps
 ```
 
 ## Example Usage

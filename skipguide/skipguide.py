@@ -44,7 +44,7 @@ class SkipGuide():
 
     References
     -------
-    TBA
+    Louie, Wilson, Max W. Shen, Zakir Tahiry, Sophia Zhang, Daniel Worstell, Christopher A. Cassa, Richard I. Sherwood, and David K. Gifford. "Machine learning based CRISPR gRNA design for therapeutic exon skipping." PLOS Computational Biology 17, no. 1 (2021): e1008605. (https://doi.org/10.1371/journal.pcbi.1008605)
     """
 
     def __init__(self, cell_type='mESC', verbose=1):
